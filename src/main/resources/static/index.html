@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HookShield - Enterprise Multi-Tenant Webhook Ingestion, Exactly-Once Semantics, Distributed Idempotency, Non-Blocking Retries, and Spring AI pgvector DLQ Semantic Error Clustering Hub.">
+  <title>HookShield | Distributed Webhook Ingestion & DLQ Hub</title>
+
+  <!-- Google Fonts: Outfit (Display), Inter (Body), JetBrains Mono (Code/Metrics) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Ambient Background Glow & Tech Mesh -->
+  <div class="ambient-glow glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow glow-2" aria-hidden="true"></div>
+  <div class="ambient-glow glow-3" aria-hidden="true"></div>
+  <div class="tech-grid-overlay" aria-hidden="true"></div>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo" aria-hidden="true">
+        <span class="shield-icon">🛡️</span>
+      </div>
+      <div>
+        <div class="brand-title-wrap">
+          <h1 class="brand-title">HookShield</h1>
+          <span class="version-badge">v1.0 LTS</span>
+        </div>
+        <div class="brand-tagline">Enterprise Webhook Ingestion & AI DLQ Hub</div>
+      </div>
+    </div>
+
+    <!-- Cluster & Engine Telemetry Ticker -->
+    <div class="engine-metrics-bar">
+      <div class="engine-badge" title="Java 21 Project Loom Virtual Threads Enabled">
+        <span class="engine-indicator active"></span>
+        <span class="engine-name">Loom Threads</span>
+      </div>
+      <div class="engine-badge" title="Apache Kafka 3.7 KRaft Mode Ingestion Broker">
+        <span class="engine-indicator active"></span>
+        <span class="engine-name">Kafka KRaft</span>
+      </div>
+      <div class="engine-badge" title="Redis 7 Redisson Distributed Lock & Token Bucket">
+        <span class="engine-indicator active"></span>
+        <span class="engine-name">Redis 7</span>
+      </div>
+      <div class="engine-badge" title="PostgreSQL 16 with pgvector 1536-dim IVFFlat Index">
+        <span class="engine-indicator active-cyan"></span>
+        <span class="engine-name">pgvector 16</span>
+      </div>
+    </div>
+
+    <div class="header-status-bar">
+      <div class="system-pill" id="system-health-pill">
+        <span class="status-dot"></span>
+        <span id="health-status-text">All Systems Operational</span>
+      </div>
+
+      <div class="refresh-control">
+        <label for="auto-refresh-toggle" style="cursor: pointer;">Live Stream</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="auto-refresh-toggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="nav-tabs-container" aria-label="Main Navigation">
+    <button class="nav-tab active" data-tab="overview" id="tab-btn-overview">
+      <span class="tab-icon">📊</span> Telemetry & Architecture
+    </button>
+    <button class="nav-tab" data-tab="simulator" id="tab-btn-simulator">
+      <span class="tab-icon">🚀</span> Webhook Studio
+    </button>
+    <button class="nav-tab" data-tab="deliveries" id="tab-btn-deliveries">
+      <span class="tab-icon">📋</span> Delivery Stream
+    </button>
+    <button class="nav-tab" data-tab="clusters" id="tab-btn-clusters">
+      <span class="tab-icon">🧠</span> AI Semantic Clusters <span class="tab-badge" id="badge-cluster-count">0</span>
+    </button>
+    <button class="nav-tab" data-tab="tenants" id="tab-btn-tenants">
+      <span class="tab-icon">🏢</span> Tenants & Policies
+    </button>
+    <button class="nav-tab" data-tab="docs" id="tab-btn-docs">
+      <span class="tab-icon">📖</span> Architecture & Docs
+    </button>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+
+    <!-- Tab 1: Telemetry & Architecture Overview -->
+    <section class="tab-pane active" id="pane-overview" aria-labelledby="tab-btn-overview">
+      
+      <!-- Telemetry Stats Grid -->
+      <div class="telemetry-grid">
+        <div class="stat-card" id="card-total-deliveries">
+          <div class="stat-card-header">
+            <span class="stat-label">Total Ingested</span>
+            <span class="stat-icon-wrap" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-primary);">📥</span>
+          </div>
+          <div class="stat-value" id="stat-total-deliveries">0</div>
+          <div class="stat-subtext">Kafka inbound-raw stream</div>
+          <div class="stat-glow-bar" style="background: var(--accent-primary);"></div>
+        </div>
+
+        <div class="stat-card" id="card-dispatched">
+          <div class="stat-card-header">
+            <span class="stat-label">Dispatched (200 OK)</span>
+            <span class="stat-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: var(--color-success);">✅</span>
+          </div>
+          <div class="stat-value" id="stat-dispatched" style="color: var(--color-success);">0</div>
+          <div class="stat-subtext">Loom virtual worker dispatch</div>
+          <div class="stat-glow-bar" style="background: var(--color-success);"></div>
+        </div>
+
+        <div class="stat-card" id="card-retrying">
+          <div class="stat-card-header">
+            <span class="stat-label">In-Flight Retries</span>
+            <span class="stat-icon-wrap" style="background: rgba(245, 158, 11, 0.15); color: var(--color-warning);">⏳</span>
+          </div>
+          <div class="stat-value" id="stat-retrying" style="color: var(--color-warning);">0</div>
+          <div class="stat-subtext">Non-blocking delay (1m-15m)</div>
+          <div class="stat-glow-bar" style="background: var(--color-warning);"></div>
+        </div>
+
+        <div class="stat-card dlq" id="card-dlq">
+          <div class="stat-card-header">
+            <span class="stat-label">Dead-Letter Queue</span>
+            <span class="stat-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: var(--color-danger);">💀</span>
+          </div>
+          <div class="stat-value" id="stat-dlq" style="color: var(--color-danger);">0</div>
+          <div class="stat-subtext">Triaged & ready for replay</div>
+          <div class="stat-glow-bar" style="background: var(--color-danger);"></div>
+        </div>
+
+        <div class="stat-card sla" id="card-sla">
+          <div class="stat-card-header">
+            <span class="stat-label">SLA Adherence</span>
+            <span class="stat-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: var(--color-success);">🎯</span>
+          </div>
+          <div class="stat-value" id="stat-sla">100%</div>
+          <div class="stat-subtext">Target: &lt;15ms Ingress SLA</div>
+          <div class="stat-glow-bar" style="background: var(--color-success);"></div>
+        </div>
+
+        <div class="stat-card" id="card-clusters">
+          <div class="stat-card-header">
+            <span class="stat-label">Semantic Clusters</span>
+            <span class="stat-icon-wrap" style="background: rgba(6, 182, 212, 0.15); color: var(--color-cyan);">🧬</span>
+          </div>
+          <div class="stat-value" id="stat-clusters" style="color: var(--color-cyan);">0</div>
+          <div class="stat-subtext">pgvector &lt;=&gt; cosine match</div>
+          <div class="stat-glow-bar" style="background: var(--color-cyan);"></div>
+        </div>
+      </div>
+
+      <!-- Interactive Distributed Pipeline Topology Banner -->
+      <article class="topology-banner">
+        <div class="topology-header">
+          <div>
+            <h2 class="topology-title">
+              <span class="pulse-spark">⚡</span> Interactive Distributed Pipeline Topology
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+              Click any stage below to inspect internal mechanics, Kafka topics, latency budgets, and resilience semantics.
+            </p>
+          </div>
+          <span class="topology-badge">
+            Java 21 Loom | KRaft 3.7 | Redis 7 | pgvector 16
+          </span>
+        </div>
+
+        <div class="topology-flow" id="pipeline-nodes-container">
+          <div class="flow-node active" data-node="1" id="flow-node-1" role="button" tabindex="0">
+            <div class="flow-node-step">STAGE 1</div>
+            <div class="flow-node-title">Ingestion Gateway</div>
+            <div class="flow-node-desc">HMAC Constant-Time + Token Bucket</div>
+            <div class="flow-node-sla">&lt; 15ms SLA</div>
+          </div>
+          
+          <div class="flow-arrow-wrap">
+            <div class="flow-arrow-line"></div>
+            <span class="flow-arrow-head">➔</span>
+          </div>
+
+          <div class="flow-node" data-node="2" id="flow-node-2" role="button" tabindex="0">
+            <div class="flow-node-step">STAGE 2</div>
+            <div class="flow-node-title">Inbound Fast-Ack</div>
+            <div class="flow-node-desc">Kafka <code>webhook-inbound-raw</code></div>
+            <div class="flow-node-sla">Async Handshake</div>
+          </div>
+
+          <div class="flow-arrow-wrap">
+            <div class="flow-arrow-line"></div>
+            <span class="flow-arrow-head">➔</span>
+          </div>
+
+          <div class="flow-node" data-node="3" id="flow-node-3" role="button" tabindex="0">
+            <div class="flow-node-step">STAGE 3</div>
+            <div class="flow-node-title">Atomic Dedup</div>
+            <div class="flow-node-desc">Redis <code>SET NX EX 86400</code></div>
+            <div class="flow-node-sla">SHA-256 Key</div>
+          </div>
+
+          <div class="flow-arrow-wrap">
+            <div class="flow-arrow-line"></div>
+            <span class="flow-arrow-head">➔</span>
+          </div>
+
+          <div class="flow-node" data-node="4" id="flow-node-4" role="button" tabindex="0">
+            <div class="flow-node-step">STAGE 4</div>
+            <div class="flow-node-title">Virtual Dispatch</div>
+            <div class="flow-node-desc">Java 21 Loom + Resilience4j CB</div>
+            <div class="flow-node-sla">Circuit Protected</div>
+          </div>
+
+          <div class="flow-arrow-wrap">
+            <div class="flow-arrow-line"></div>
+            <span class="flow-arrow-head">➔</span>
+          </div>
+
+          <div class="flow-node" data-node="5" id="flow-node-5" role="button" tabindex="0" style="border-color: rgba(245, 158, 11, 0.4);">
+            <div class="flow-node-step" style="color: var(--color-warning);">STAGE 5</div>
+            <div class="flow-node-title">Multi-Tier Retry</div>
+            <div class="flow-node-desc">1m ➔ 5m ➔ 15m Delayed Topics</div>
+            <div class="flow-node-sla" style="color: var(--color-warning);">Non-Blocking</div>
+          </div>
+
+          <div class="flow-arrow-wrap">
+            <div class="flow-arrow-line"></div>
+            <span class="flow-arrow-head">➔</span>
+          </div>
+
+          <div class="flow-node" data-node="6" id="flow-node-6" role="button" tabindex="0" style="border-color: rgba(6, 182, 212, 0.4);">
+            <div class="flow-node-step" style="color: var(--color-cyan);">STAGE 6</div>
+            <div class="flow-node-title">AI DLQ Triage</div>
+            <div class="flow-node-desc">Spring AI + pgvector Clustering</div>
+            <div class="flow-node-sla" style="color: var(--color-cyan);">1536-dim Unit</div>
+          </div>
+        </div>
+
+        <!-- Node Inspector Card (Dynamically updated on node click) -->
+        <div class="node-inspector-card" id="node-inspector-box">
+          <div class="inspector-header">
+            <div class="inspector-badge" id="inspector-stage-tag">STAGE 1: INGESTION GATEWAY</div>
+            <span class="inspector-tech" id="inspector-tech-tag">WebhookIngressController.java</span>
+          </div>
+          <h3 class="inspector-title" id="inspector-title">High-Throughput Ingestion & Cryptographic Verification</h3>
+          <p class="inspector-description" id="inspector-desc">
+            Terminates inbound HTTP POST webhooks, validates tenant HMAC-SHA256 signatures using constant-time byte comparisons to prevent timing side-channel exploits, and enforces token-bucket rate quotas per tenant.
+          </p>
+          <div class="inspector-grid" id="inspector-grid">
+            <div class="inspector-item">
+              <span class="inspector-key">Latency SLA</span>
+              <span class="inspector-val highlight-green" id="inspector-sla">&lt; 15ms Fast-Ack</span>
+            </div>
+            <div class="inspector-item">
+              <span class="inspector-key">Active Broker / Cache</span>
+              <span class="inspector-val font-mono" id="inspector-broker">Redis L1 Secret Cache (&lt;1ms)</span>
+            </div>
+            <div class="inspector-item">
+              <span class="inspector-key">Security Mechanism</span>
+              <span class="inspector-val" id="inspector-sec">Constant-Time MessageDigest.isEqual</span>
+            </div>
+            <div class="inspector-item">
+              <span class="inspector-key">Failure Policy</span>
+              <span class="inspector-val highlight-orange" id="inspector-fail">HTTP 401 Unauthorized / HTTP 429 Surge Rejection</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- Tab 2: Webhook Studio & Simulator -->
+    <section class="tab-pane" id="pane-simulator" aria-labelledby="tab-btn-simulator">
+      <div class="simulator-grid">
+        
+        <!-- Request Builder Panel -->
+        <div class="card-panel">
+          <div class="panel-header-row">
+            <div>
+              <h2 class="card-title">🚀 Interactive Webhook Studio</h2>
+              <p class="card-subtitle">
+                Simulate real production webhook events with cryptographic HMAC signatures, rate limit checks, and Virtual Thread execution.
+              </p>
+            </div>
+            <span class="pill-glow-tag">Live Engine</span>
+          </div>
+
+          <!-- Preset Templates -->
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Event Preset Templates:</label>
+            <div class="preset-pills">
+              <button type="button" class="preset-btn active" data-preset="stripe_payment">
+                <span>💳</span> Stripe Payment Succeeded
+              </button>
+              <button type="button" class="preset-btn" data-preset="github_push">
+                <span>🐙</span> GitHub Push Commit
+              </button>
+              <button type="button" class="preset-btn" data-preset="shopify_order">
+                <span>🛍️</span> Shopify Order Paid
+              </button>
+              <button type="button" class="preset-btn warning" data-preset="subscriber_503">
+                <span>⚠️</span> Simulate 503 Outage (Retry)
+              </button>
+              <button type="button" class="preset-btn danger" data-preset="auth_failure">
+                <span>🔒</span> 401 Unauthorized (Auth DLQ)
+              </button>
+            </div>
+          </div>
+
+          <form id="webhook-simulator-form">
+            <div class="form-grid-2">
+              <div>
+                <label for="sim-tenant-select" class="form-label">Tenant Account:</label>
+                <select id="sim-tenant-select" class="form-select"></select>
+              </div>
+              <div>
+                <label for="sim-provider-select" class="form-label">Provider Protocol:</label>
+                <select id="sim-provider-select" class="form-select"></select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="label-with-action">
+                <label for="sim-endpoint" class="form-label">Target Subscriber Destination Endpoint:</label>
+                <button type="button" class="text-action-btn" id="btn-reset-endpoint">Use Built-in Mock Subscriber</button>
+              </div>
+              <input type="text" id="sim-endpoint" class="form-control" value="http://localhost:8080/api/v1/webhooks/mock-subscriber">
+            </div>
+
+            <div class="form-group">
+              <label for="sim-status-code" class="form-label">Mock Subscriber Simulated Response Code:</label>
+              <select id="sim-status-code" class="form-select">
+                <option value="200">200 OK — Successful Outbound Dispatch</option>
+                <option value="503">503 Service Unavailable — Triggers Non-Blocking Retry Tier (1m -> 5m -> 15m)</option>
+                <option value="500">500 Internal Server Error — Downstream Bug DLQ Path</option>
+                <option value="401">401 Unauthorized — Expired Token DLQ Path</option>
+                <option value="422">422 Unprocessable Entity — Schema Mismatch DLQ Path</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="label-with-action">
+                <label for="sim-payload" class="form-label">Raw JSON Webhook Body:</label>
+                <div class="code-action-group">
+                  <button type="button" class="text-action-btn" id="btn-format-json">Format JSON</button>
+                  <button type="button" class="text-action-btn" id="btn-randomize-id">New Event ID</button>
+                </div>
+              </div>
+              <textarea id="sim-payload" class="form-control" rows="8" spellcheck="false"></textarea>
+            </div>
+
+            <button type="submit" id="sim-submit-btn" class="btn-primary">
+              <span class="btn-icon">🚀</span>
+              <span>Ingest & Dispatch Webhook</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Real-Time Ingestion Response Card -->
+        <div class="card-panel">
+          <div class="panel-header-row">
+            <div>
+              <h2 class="card-title">⚡ Real-Time Ingestion Inspector</h2>
+              <p class="card-subtitle">
+                Cryptographic signature calculation, microsecond latency timing, and execution trace.
+              </p>
+            </div>
+            <span class="pill-glow-tag" id="live-trace-badge">Awaiting Ingest</span>
+          </div>
+
+          <div id="simulation-result-box" class="simulation-result-box">
+            <div class="result-empty">
+              <div class="result-empty-icon">📡</div>
+              <div style="font-weight: 600; font-size: 1.1rem; color: #fff;">Awaiting Webhook Ingestion</div>
+              <p style="font-size: 0.85rem; margin-top: 0.5rem; max-width: 320px; line-height: 1.6;">
+                Select an event preset on the left and click <strong>Ingest & Dispatch Webhook</strong> to verify HMAC tokens, Redis atomic locks, and Virtual Thread execution.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Tab 3: Delivery Audit Stream -->
+    <section class="tab-pane" id="pane-deliveries" aria-labelledby="tab-btn-deliveries">
+      <div class="card-panel" style="padding: 1.5rem;">
+        
+        <!-- Table Filter Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="deliveries-search" class="search-input" placeholder="Search by Delivery ID, Provider, Target Endpoint, Tenant...">
+            <button type="button" class="clear-search-btn" id="clear-search-btn" title="Clear search">&times;</button>
+          </div>
+
+          <div class="filter-pills">
+            <button type="button" class="filter-btn active" data-status="">All</button>
+            <button type="button" class="filter-btn" data-status="DISPATCHED">Dispatched</button>
+            <button type="button" class="filter-btn" data-status="RETRYING">Retrying</button>
+            <button type="button" class="filter-btn" data-status="DEAD_LETTER">DLQ</button>
+            <button type="button" class="filter-btn" data-status="RECEIVED">Received</button>
+          </div>
+
+          <button type="button" class="refresh-action-btn" id="btn-refresh-deliveries" title="Refresh Deliveries">
+            <span>🔄</span> Refresh
+          </button>
+        </div>
+
+        <!-- Deliveries Table -->
+        <div class="table-container">
+          <table class="data-table" id="deliveries-table">
+            <thead>
+              <tr>
+                <th>Delivery ID</th>
+                <th>Provider</th>
+                <th>Status</th>
+                <th style="text-align: center;">Retries</th>
+                <th>Tenant</th>
+                <th>Target Destination Endpoint</th>
+                <th>Received At</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="deliveries-table-body">
+              <tr>
+                <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 3rem;">
+                  <div class="table-loader-spinner"></div>
+                  <div style="margin-top: 0.75rem;">Loading delivery logs...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Tab 4: AI DLQ Semantic Clusters -->
+    <section class="tab-pane" id="pane-clusters" aria-labelledby="tab-btn-clusters">
+      <div class="card-panel">
+        <div class="panel-header-row">
+          <div>
+            <h2 class="card-title">🧠 Spring AI Diagnostic & pgvector Semantic Clusters</h2>
+            <p class="card-subtitle">
+              When downstream subscribers exhaust non-blocking retries, Spring AI categorizes failures with zero-shot LLM reasoning, creates 1536-dimensional unit vectors, and clusters errors using PostgreSQL <code>pgvector</code> cosine distance (<code>&lt;=&gt;</code> operator).
+            </p>
+          </div>
+          <span class="system-pill" style="border-color: rgba(6, 182, 212, 0.4); color: var(--color-cyan); background: rgba(6, 182, 212, 0.1);">
+            pgvector 1536-dim IVFFlat Active
+          </span>
+        </div>
+
+        <!-- Clusters Grid -->
+        <div class="clusters-grid" id="clusters-grid"></div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Tenant & Policy Configuration -->
+    <section class="tab-pane" id="pane-tenants" aria-labelledby="tab-btn-tenants">
+      <div class="card-panel">
+        <div class="panel-header-row">
+          <div>
+            <h2 class="card-title">🏢 Tenant Security & Rate Limiting Configurations</h2>
+            <p class="card-subtitle">
+              Configured token-bucket quotas, burst allowances, and registered HMAC provider secrets.
+            </p>
+          </div>
+          <span class="pill-glow-tag">Multi-Tenant Isolation</span>
+        </div>
+        <div id="tenants-policy-container"></div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Architecture & Documentation Hub -->
+    <section class="tab-pane" id="pane-docs" aria-labelledby="tab-btn-docs">
+      <div class="docs-container">
+        
+        <!-- Documentation Hero -->
+        <div class="docs-hero-card">
+          <div class="docs-hero-tag">DISTRIBUTED SYSTEMS SPECIFICATION</div>
+          <h2 class="docs-hero-title">HookShield Architecture & Engineering Deep Dive</h2>
+          <p class="docs-hero-desc">
+            An enterprise-grade, high-throughput webhook ingestion and DLQ triage hub engineered with Java 21 Loom Virtual Threads, Apache Kafka (KRaft), Redis 7 Redisson, PostgreSQL 16 (pgvector), and Spring AI.
+          </p>
+          <div class="docs-links-row">
+            <span class="doc-file-badge">📄 HOOKSHIELD_DOCUMENTATION.md</span>
+            <span class="doc-file-badge">📄 ARCHITECTURE.md</span>
+            <span class="doc-file-badge">SLA: Sub-15ms Ingestion Latency</span>
+          </div>
+        </div>
+
+        <!-- Section 1: Why This Platform? -->
+        <div class="docs-card">
+          <h3 class="docs-section-title">
+            <span class="doc-sec-num">01</span> Why HookShield? The Problem Space
+          </h3>
+          <p class="docs-p">
+            In modern microservice architectures, webhooks are the primary mechanism for asynchronous inter-system communication between payment processors (Stripe), source control platforms (GitHub), and SaaS apps. However, receiving webhooks in production introduces critical distributed failure modes:
+          </p>
+
+          <div class="docs-matrix-table-wrap">
+            <table class="docs-matrix-table">
+              <thead>
+                <tr>
+                  <th>Traditional Flaw</th>
+                  <th>Production Impact</th>
+                  <th>HookShield Architectural Solution</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong style="color: #fff;">Ingress Head-of-Line Blocking</strong></td>
+                  <td>Traffic spikes exhaust Tomcat OS threads, causing HTTP 504 timeouts and data loss.</td>
+                  <td><span class="tag-solution">Sub-15ms Ingress Fast-Ack</span>: Writes to Kafka <code>webhook-inbound-raw</code> and returns HTTP 202 immediately.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #fff;">Duplicate Delivery & Races</strong></td>
+                  <td>Aggressive provider retries result in double billing or corrupted inventory.</td>
+                  <td><span class="tag-solution">Atomic Distributed Idempotency</span>: Redis <code>SET NX EX 86400</code> on composite SHA-256 hashes (&lt;1ms).</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #fff;">Thread-Sleep Retries</strong></td>
+                  <td><code>Thread.sleep()</code> inside consumer loops pauses partition polling, triggering Kafka rebalances.</td>
+                  <td><span class="tag-solution">Non-Blocking Topic Hopping</span>: Dedicated delayed topics (1m ➔ 5m ➔ 15m) without thread sleep.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #fff;">Cascading Outages</strong></td>
+                  <td>Hammering a degraded subscriber worsens their outage.</td>
+                  <td><span class="tag-solution">Per-Host Resilience4j Circuit Breakers</span>: Trips open upon 50% failure rate; fast-fails directly to retry topics.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #fff;">The DLQ Graveyard</strong></td>
+                  <td>Thousands of raw JSON errors pile up in unindexed logs; root causes remain unknown.</td>
+                  <td><span class="tag-solution">Spring AI & pgvector Triage</span>: 1536-dim vector embeddings clustered with IVFFlat cosine distance (&lt;=&gt;).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 2: How It Works -->
+        <div class="docs-card">
+          <h3 class="docs-section-title">
+            <span class="doc-sec-num">02</span> How It Works: Request Lifecycle & State Machine
+          </h3>
+          <p class="docs-p">
+            HookShield processes webhooks across 6 decoupled stages with strict transactional boundaries:
+          </p>
+
+          <div class="docs-lifecycle-grid">
+            <div class="lifecycle-step-card">
+              <div class="step-num-pill">1</div>
+              <h4>Header Auth</h4>
+              <p>Extracts HMAC signature and tenant secret from Redis L1 cache in &lt;0.8ms.</p>
+            </div>
+            <div class="lifecycle-step-card">
+              <div class="step-num-pill">2</div>
+              <h4>Rate Limiting</h4>
+              <p>Evaluates Redis token-bucket per tenant in &lt;0.5ms; rejects spikes with HTTP 429.</p>
+            </div>
+            <div class="lifecycle-step-card">
+              <div class="step-num-pill">3</div>
+              <h4>Kafka Fast-Ack</h4>
+              <p>Produces to <code>webhook-inbound-raw</code> and returns HTTP 202 Accepted (&lt;15ms SLA).</p>
+            </div>
+            <div class="lifecycle-step-card">
+              <div class="step-num-pill">4</div>
+              <h4>Atomic Dedup</h4>
+              <p>Redis <code>SET NX</code> locks composite SHA-256 hash. Inserts PostgreSQL audit row.</p>
+            </div>
+            <div class="lifecycle-step-card">
+              <div class="step-num-pill">5</div>
+              <h4>Virtual Dispatch</h4>
+              <p>Dispatches via Java 21 Loom virtual threads with per-host circuit breakers.</p>
+            </div>
+            <div class="lifecycle-step-card">
+              <div class="step-num-pill">6</div>
+              <h4>AI DLQ Triage</h4>
+              <p>If retries exhausted, Spring AI generates embeddings and clusters errors in pgvector.</p>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; background: var(--bg-input); border-radius: var(--radius-md); padding: 1.25rem; border: 1px solid var(--border-subtle);">
+            <div style="font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Delivery State Machine:</div>
+            <div class="state-machine-flow">
+              <span class="status-tag RECEIVED">RECEIVED</span>
+              <span class="state-arrow">➔</span>
+              <span class="status-tag DISPATCHED">DISPATCHED (200 OK)</span>
+              <span class="state-or">OR</span>
+              <span class="status-tag RETRYING">RETRYING (1m ➔ 5m ➔ 15m)</span>
+              <span class="state-arrow">➔</span>
+              <span class="status-tag DEAD_LETTER">DEAD_LETTER</span>
+              <span class="state-arrow">➔</span>
+              <span class="status-tag REPLAYED">REPLAYED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Deep Dive into Core Components -->
+        <div class="docs-card">
+          <h3 class="docs-section-title">
+            <span class="doc-sec-num">03</span> Component Deep Dive
+          </h3>
+          <p class="docs-p">
+            Each subsystem is built as a self-contained, highly resilient unit with explicit failure boundaries:
+          </p>
+
+          <div class="components-deepdive-grid">
+            
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">🛡️</span>
+                <div>
+                  <h4 class="comp-name">Ingress Gateway Controller</h4>
+                  <div class="comp-file">WebhookIngressController.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Public API endpoint. Performs zero database writes on the critical path. Asynchronously dispatches to Kafka broker and fast-acks HTTP 202 Accepted within 2-10ms.
+              </p>
+              <div class="comp-detail-badge">SLA: Sub-15ms Ingestion Latency</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">🔐</span>
+                <div>
+                  <h4 class="comp-name">HMAC Signature Verifier</h4>
+                  <div class="comp-file">HmacSignatureVerifier.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Uses <code>MessageDigest.isEqual(...)</code> constant-time comparisons to prevent timing side-channel attacks. Automatically normalizes Stripe, GitHub, and Shopify signature schemes.
+              </p>
+              <div class="comp-detail-badge">Security: Constant-Time Byte Verification</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">⏱️</span>
+                <div>
+                  <h4 class="comp-name">Token-Bucket Rate Limiter</h4>
+                  <div class="comp-file">RateLimitingService.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Powered by Redisson distributed atomic rate limiters running in Redis memory. Smoothly absorbs bursts while protecting internal infrastructure.
+              </p>
+              <div class="comp-detail-badge">Algorithm: Distributed Token Bucket</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">🔒</span>
+                <div>
+                  <h4 class="comp-name">Atomic Deduplication Engine</h4>
+                  <div class="comp-file">IdempotencyService.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Generates composite SHA-256 hashes of Tenant + Provider + Payload + EventID. Acquires Redis <code>SET NX EX 86400</code> lock before database persistence to guarantee exactly-once processing.
+              </p>
+              <div class="comp-detail-badge">Concurrency: Atomic Distributed Lock</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">🚀</span>
+                <div>
+                  <h4 class="comp-name">Virtual Thread Dispatcher</h4>
+                  <div class="comp-file">DispatchConsumer.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Java 21 Project Loom virtual threads power outbound HTTP dispatches. Carrier worker threads are freed during downstream I/O wait times, allowing tens of thousands of concurrent requests.
+              </p>
+              <div class="comp-detail-badge">Runtime: Java 21 Project Loom</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">⚡</span>
+                <div>
+                  <h4 class="comp-name">Resilience4j Circuit Breaker</h4>
+                  <div class="comp-file">ResilienceConfig.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Dynamically manages sliding-window circuit breakers per subscriber hostname. When a downstream service degrades (50% failure rate), trips open to fast-fail into retry topics.
+              </p>
+              <div class="comp-detail-badge">Fault Tolerance: Dynamic Host Circuit Breaking</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">⏳</span>
+                <div>
+                  <h4 class="comp-name">Non-Blocking Retry Pipeline</h4>
+                  <div class="comp-file">RetryConsumers.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                Employs dedicated delayed Kafka topics (<code>webhook-retry-1m</code>, <code>5m</code>, <code>15m</code>). Scheduled on virtual thread executors without stalling consumer poll loops or triggering rebalances.
+              </p>
+              <div class="comp-detail-badge">Architecture: Multi-Topic Delayed Backoff</div>
+            </div>
+
+            <div class="component-card">
+              <div class="comp-header">
+                <span class="comp-icon">🧠</span>
+                <div>
+                  <h4 class="comp-name">Spring AI & pgvector Triage Hub</h4>
+                  <div class="comp-file">AiDiagnosticService.java</div>
+                </div>
+              </div>
+              <p class="comp-desc">
+                When retries exhaust, generates 1536-dimensional embeddings. Queries PostgreSQL using cosine distance (<code>&lt;=&gt; &lt;= 0.12</code>, &ge;88% similarity) to cluster duplicate errors, and runs zero-shot LLM reasoning for novel failures.
+              </p>
+              <div class="comp-detail-badge">Intelligence: 1536-dim pgvector Cosine Match</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Section 4: Mathematical Formulation -->
+        <div class="docs-card">
+          <h3 class="docs-section-title">
+            <span class="doc-sec-num">04</span> Mathematical Model: pgvector Cosine Distance
+          </h3>
+          <p class="docs-p">
+            In PostgreSQL <code>pgvector</code>, the cosine distance between two 1536-dimensional embedding vectors $u$ and $v$ is computed natively via the <code>&lt;=&gt;</code> operator:
+          </p>
+
+          <div class="math-formula-box">
+            $$\text{dist}(u, v) = 1 - \frac{u \cdot v}{\|u\|_2 \|v\|_2} = 1 - \frac{\sum_{i=1}^{1536} u_i v_i}{\sqrt{\sum_{i=1}^{1536} u_i^2} \sqrt{\sum_{i=1}^{1536} v_i^2}}$$
+          </div>
+
+          <p class="docs-p" style="margin-top: 1rem;">
+            With a configured threshold of <strong>0.12</strong>, any error whose signature has <strong>&ge; 88% semantic similarity</strong> automatically groups into an existing incident cluster, instantly eliminating alert fatigue for operations teams.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Side Drawer Modal for Webhook Payload Details -->
+  <div class="drawer-overlay" id="drawer-overlay">
+    <aside class="drawer" id="payload-drawer">
+      <div class="drawer-header">
+        <div>
+          <h3 class="drawer-title">Webhook Delivery Details</h3>
+          <span class="mono-cell" id="drawer-delivery-id" style="font-size: 0.75rem;"></span>
+        </div>
+        <button type="button" class="close-btn" id="drawer-close-btn" aria-label="Close Drawer">&times;</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="drawer-meta-grid">
+          <div>
+            <span class="drawer-meta-label">Status:</span>
+            <div id="drawer-status"></div>
+          </div>
+          <div>
+            <span class="drawer-meta-label">Provider:</span>
+            <div id="drawer-provider" style="font-weight: 600; color: #fff;"></div>
+          </div>
+          <div>
+            <span class="drawer-meta-label">Tenant:</span>
+            <div id="drawer-tenant" style="color: #fff;"></div>
+          </div>
+          <div>
+            <span class="drawer-meta-label">Retry Attempts:</span>
+            <div id="drawer-retries" style="font-weight: 600; color: var(--color-warning);"></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <span class="drawer-meta-label">Target Destination Endpoint:</span>
+          <div class="mono-cell" id="drawer-endpoint" style="word-break: break-all; padding: 0.5rem; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);"></div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="drawer-meta-label">Idempotency SHA-256 Hash:</span>
+            <button type="button" class="text-copy-btn" id="btn-copy-hash" title="Copy Hash">Copy</button>
+          </div>
+          <div class="mono-cell" id="drawer-hash" style="font-size: 0.75rem; word-break: break-all; color: var(--accent-secondary); padding: 0.5rem; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);"></div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span class="drawer-meta-label">Decoded JSON Payload:</span>
+            <button type="button" class="text-copy-btn" id="btn-copy-payload" title="Copy JSON">Copy JSON</button>
+          </div>
+          <pre class="payload-code-block" id="drawer-payload-code"></pre>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); display: flex; gap: 0.75rem;">
+          <button type="button" class="btn-primary" id="btn-drawer-replay" style="width: 100%;">
+            <span>🔁 Replay Webhook Delivery</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Core Application Script -->
+  <script src="/js/app.js"></script>
+</body>
+</html>

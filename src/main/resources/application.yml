@@ -1,0 +1,124 @@
+spring:
+  application:
+    name: hookshield
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/hookshield}
+    username: ${SPRING_DATASOURCE_USERNAME:hookshield}
+    password: ${SPRING_DATASOURCE_PASSWORD:hookshield_secret}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: HookShieldHikariCP
+      maximum-pool-size: 50
+      minimum-idle: 10
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 10000
+      validation-timeout: 3000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 50
+          order_inserts: true
+          order_updates: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2000ms
+      repositories:
+        enabled: false
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        compression.type: zstd
+        linger.ms: 5
+        batch.size: 65536
+        max.in.flight.requests.per.connection: 5
+        enable.idempotence: true
+    consumer:
+      group-id: hookshield-inbound-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "com.hookshield.*,*"
+        max.poll.records: 100
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo-key-for-local-dev}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.2
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: hookshield
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      webhookDispatcher:
+        baseConfig: default
+
+hookshield:
+  kafka:
+    topics:
+      inbound-raw: webhook-inbound-raw
+      dispatch-queue: webhook-dispatch-queue
+      retry-1m: webhook-retry-1m
+      retry-5m: webhook-retry-5m
+      retry-15m: webhook-retry-15m
+      dead-letter-queue: webhook-dead-letter-queue
+  ai:
+    similarity-threshold: 0.12 # Cosine distance <= 0.12 represents >= 88% similarity
+    auto-replay-cooling-minutes: 30
+    mock-enabled: ${HOOKSHIELD_AI_MOCK_ENABLED:false}
